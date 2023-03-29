@@ -17,14 +17,14 @@ import (
 
 var (
 	AppName    string = "Domaininator"
-	AppVersion string = "0.0.1"
+	AppVersion string = "0.0.2"
 	workers    int
 	version    bool
 	dbg        bool
 )
 
 func init() {
-	flag.IntVar(&workers, "workers", 4, "Number of parallel workers to run")
+	flag.IntVar(&workers, "workers", 16, "Number of parallel workers to run")
 	flag.BoolVar(&version, "version", false, "Show version info and exit")
 	flag.Parse()
 }
@@ -82,14 +82,12 @@ func main() {
 	for _, domain := range domains {
 		select {
 		case <-queueKill:
-			fmt.Println("Closing lookup queue...")
 			close(lookupChan)
 			return
 		default:
 			lookupChan <- domain
 		}
 	}
-	close(lookupChan)
 
 	bar.Finish()
 	waitGroup.Wait()
