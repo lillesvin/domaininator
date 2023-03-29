@@ -20,12 +20,14 @@ var (
 	AppVersion string = "0.0.2"
 	workers    int
 	version    bool
+	verbose    bool
 	dbg        bool
 )
 
 func init() {
 	flag.IntVar(&workers, "workers", 16, "Number of parallel workers to run")
 	flag.BoolVar(&version, "version", false, "Show version info and exit")
+	flag.BoolVar(&verbose, "verbose", false, "Show all the things")
 	flag.Parse()
 }
 
@@ -35,7 +37,7 @@ func main() {
 		os.Exit(0)
 	}
 
-	if flag.NArg() < 1 {
+	if flag.NArg() != 1 {
 		flag.Usage()
 		os.Exit(1)
 	}
@@ -53,6 +55,7 @@ func main() {
 
 	args := flag.Args()
 
+	fmt.Printf("Pattern: %s\n", args[0])
 	charset, _ := syntax.Parse(`[a-z0-9]`, syntax.Perl)
 	input, err := syntax.Parse(args[0], syntax.Perl)
 	if err != nil {
@@ -70,7 +73,7 @@ func main() {
 	}()
 
 	for i := 0; i < workers; i++ {
-		go worker(&waitGroup, lookupChan, responseChan, workerKill, bar)
+		go worker(&waitGroup, lookupChan, responseChan, workerKill, bar, verbose)
 		waitGroup.Add(1)
 	}
 
@@ -88,17 +91,17 @@ func main() {
 			lookupChan <- domain
 		}
 	}
+	close(lookupChan)
 
-	bar.Finish()
 	waitGroup.Wait()
-
-	fmt.Println("\n")
+	bar.Finish()
 
 	// Print output
+	fmt.Println("")
 	fmt.Println(strings.Join(outBuffer, "\n"))
 }
 
-func worker(wg *sync.WaitGroup, lookups chan string, responses chan string, workerKill chan bool, bar *pb.ProgressBar) {
+func worker(wg *sync.WaitGroup, lookups chan string, responses chan string, workerKill chan bool, bar *pb.ProgressBar, verbose bool) {
 	defer wg.Done()
 
 	for d := range lookups {
@@ -110,6 +113,8 @@ func worker(wg *sync.WaitGroup, lookups chan string, responses chan string, work
 			dns := DNSLookup(d)
 			if len(dns) > 0 {
 				responses <- fmt.Sprintf("%s: %s", d, strings.Join(dns, ","))
+			} else if verbose {
+				responses <- d
 			}
 			bar.Increment()
 		}
