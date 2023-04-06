@@ -6,6 +6,22 @@ pattern.
 ## Usage
 
 ```
+Usage of ./domaininator:
+  -ip
+        Show IPs on resolving domains
+  -verbose
+        Show all domain names, even if they are not registered
+  -version
+        Show version info and exit
+  -workers int
+        Number of parallel workers to run (default 16)
+```
+
+**NOTE:** Domaininator defaults to showing only domains with an A, NS or MX record.
+
+## Example
+
+```
 $ domaininator "[gq][o0]{2}[gq][l1i]e\.com"
  48 / 48 [=========================================================================] 100.00% 0s
 
@@ -35,8 +51,4 @@ qoogle.com: NS
 qoog1e.com: A,NS
 ```
 
-Domaininator defaults to showing only domains with an A, NS or MX record. Use `-verbose` to output all generated domain names even if they don't have any DNS records.
-
-Use `-workers INT` to adjust the number of concurrent goroutines that are used
-for making DNS lookups. Default is 16.
 
