@@ -15,19 +15,24 @@ import (
 	"github.com/cheggaaa/pb"
 )
 
+type Config struct {
+	workers int
+	verbose bool
+	showIPs bool
+}
+
 var (
 	AppName    string = "Domaininator"
-	AppVersion string = "0.0.2"
-	workers    int
+	AppVersion string = "0.0.4"
 	version    bool
-	verbose    bool
-	dbg        bool
+	cfg        Config = Config{}
 )
 
 func init() {
-	flag.IntVar(&workers, "workers", 16, "Number of parallel workers to run")
+	flag.IntVar(&cfg.workers, "workers", 16, "Number of parallel workers to run")
+	flag.BoolVar(&cfg.verbose, "verbose", false, "Show all domain names, even if they are not registered")
+	flag.BoolVar(&cfg.showIPs, "ip", false, "Show IPs on resolving domains")
 	flag.BoolVar(&version, "version", false, "Show version info and exit")
-	flag.BoolVar(&verbose, "verbose", false, "Show all the things")
 	flag.Parse()
 }
 
@@ -42,16 +47,18 @@ func main() {
 		os.Exit(1)
 	}
 
-	var waitGroup sync.WaitGroup
-	var outBuffer []string
-	var count int
+	var (
+		waitGroup sync.WaitGroup
+		outBuffer []string
+		count     int
+	)
 
 	workerKill := make(chan bool)
 	queueKill := make(chan bool)
 	lookupChan := make(chan string)
 	responseChan := make(chan string)
 
-	interruptHandler(workerKill, queueKill, workers)
+	interruptHandler(workerKill, queueKill, cfg.workers)
 
 	args := flag.Args()
 
@@ -65,6 +72,7 @@ func main() {
 	count = int(genex.Count(input, charset, 3))
 
 	bar := pb.StartNew(count)
+	bar.Output = os.Stderr
 
 	go func() {
 		for res := range responseChan {
@@ -72,8 +80,8 @@ func main() {
 		}
 	}()
 
-	for i := 0; i < workers; i++ {
-		go worker(&waitGroup, lookupChan, responseChan, workerKill, bar, verbose)
+	for i := 0; i < cfg.workers; i++ {
+		go worker(&waitGroup, lookupChan, responseChan, workerKill, bar, &cfg)
 		waitGroup.Add(1)
 	}
 
@@ -101,7 +109,7 @@ func main() {
 	fmt.Println(strings.Join(outBuffer, "\n"))
 }
 
-func worker(wg *sync.WaitGroup, lookups chan string, responses chan string, workerKill chan bool, bar *pb.ProgressBar, verbose bool) {
+func worker(wg *sync.WaitGroup, lookups chan string, responses chan string, workerKill chan bool, bar *pb.ProgressBar, cfg *Config) {
 	defer wg.Done()
 
 	for d := range lookups {
@@ -110,10 +118,10 @@ func worker(wg *sync.WaitGroup, lookups chan string, responses chan string, work
 			fmt.Println("Stopping worker")
 			return
 		default:
-			dns := DNSLookup(d)
+			dns := DNSLookup(d, cfg)
 			if len(dns) > 0 {
-				responses <- fmt.Sprintf("%s: %s", d, strings.Join(dns, ","))
-			} else if verbose {
+				responses <- fmt.Sprintf("%s: %s", d, strings.Join(dns, "; "))
+			} else if cfg.verbose {
 				responses <- d
 			}
 			bar.Increment()
@@ -137,22 +145,42 @@ func interruptHandler(workerKill, queueKill chan bool, workers int) {
 	}()
 }
 
-func DNSLookup(domain string) []string {
+func DNSLookup(domain string, cfg *Config) []string {
 	var ret []string
 
 	ips, _ := net.LookupHost(domain)
 	if len(ips) > 0 {
-		ret = append(ret, "A")
+		if cfg.showIPs {
+			ret = append(ret, fmt.Sprintf("A: %s", strings.Join(ips, ", ")))
+		} else {
+			ret = append(ret, "A")
+		}
 	}
 
 	mxs, _ := net.LookupMX(domain)
 	if len(mxs) > 0 {
-		ret = append(ret, "MX")
+		if cfg.showIPs {
+			var out []string
+			for _, mx := range mxs {
+				out = append(out, mx.Host)
+			}
+			ret = append(ret, fmt.Sprintf("MX: %s", strings.Join(out, ", ")))
+		} else {
+			ret = append(ret, "MX")
+		}
 	}
 
 	nss, _ := net.LookupNS(domain)
 	if len(nss) > 0 {
-		ret = append(ret, "NS")
+		if cfg.showIPs {
+			var out []string
+			for _, ns := range nss {
+				out = append(out, ns.Host)
+			}
+			ret = append(ret, fmt.Sprintf("NS: %s", strings.Join(out, ", ")))
+		} else {
+			ret = append(ret, "NS")
+		}
 	}
 
 	return ret
