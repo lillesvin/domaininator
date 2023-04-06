@@ -1,7 +1,8 @@
 # Domaininator
 
 Fast generation and lookups of all domain names matching a specific regexp
-pattern.
+pattern using [alixaxel](https://github.com/alixaxel)'s excelent
+[genex](https://github.com/alixaxel/genex) library.
 
 ## Usage
 
