@@ -1,3 +1,5 @@
+github.com/BurntSushi/toml v1.2.1 h1:9F2/+DoOYIOksmaJFPw1tGFy1eDnIJXg+UHjuD8lTak=
+github.com/BurntSushi/toml v1.2.1/go.mod h1:CxXYINrC8qIiEnFrOxCa7Jy5BFHlXnUU2pbicEuybxQ=
 github.com/alixaxel/genex v0.0.0-20200105181034-2f0294e19d3c h1:Fimi7d44s2IRZnT9SUeReZAr1Lo2uGQx90Yfxal4xnU=
 github.com/alixaxel/genex v0.0.0-20200105181034-2f0294e19d3c/go.mod h1:xPzHezUX1NeeICw0tTIlqbp/Jr2fT7OqUMH3DG5s7ZU=
 github.com/cheggaaa/pb v1.0.29 h1:FckUN5ngEk2LpvuG0fw1GEFx6LtyY2pWI/Z2QgCnEYo=
