@@ -35,7 +35,7 @@ func init() {
 	flag.Parse()
 }
 
-func isFlagSet(name string) bool {
+func flagSet(name string) bool {
 	found := false
 	flag.Visit(func(f *flag.Flag) {
 		if f.Name == name {
@@ -68,13 +68,13 @@ func main() {
 	}
 
 	// Let flags override config settings
-	if isFlagSet("ip") {
+	if flagSet("ip") {
 		cfg.ShowIPs = flagShowIPs
 	}
-	if isFlagSet("verbose") {
+	if flagSet("verbose") {
 		cfg.Verbose = flagVerbose
 	}
-	if isFlagSet("workers") {
+	if flagSet("workers") {
 		cfg.Workers = flagWorkers
 	}
 

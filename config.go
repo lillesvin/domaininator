@@ -38,7 +38,11 @@ func FindConfig() (string, error) {
 }
 
 func NewFromTOML(file string) (*Config, error) {
-	cfg := &Config{}
+	cfg := &Config{
+		Workers: 16,
+		Verbose: false,
+		ShowIPs: false,
+	}
 	if _, err := toml.DecodeFile(file, cfg); err != nil {
 		return nil, err
 	}
