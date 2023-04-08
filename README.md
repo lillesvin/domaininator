@@ -12,6 +12,8 @@ phishing kits.
 
 ```
 Usage of ./domaininator:
+  -config string
+        Config file to use
   -ip
         Show IPs on resolving domains
   -verbose
@@ -24,9 +26,46 @@ Usage of ./domaininator:
 
 **NOTE:** Domaininator defaults to showing only domains with an A, NS or MX record.
 
-### Example
+## Config file
 
-To find domains that could (with some fonts) be visually similar to "google.com":
+Domaininator looks for config files in the following places:
+
+ * `./.domaininator.toml`
+ * `./domaininator.toml`
+ * `$XDG_CONFIG_HOME/domaininator/config.toml` or
+   `$HOME/.config/domaininator/config.toml` on \*nix
+ * `$HOME/Library/Application Support/domaininator/config.toml` on macOS
+ * `%AppData%\domaininator\config.toml` on Windows
+ * `$HOME/.domaininator.toml` on \*nix and macOS
+ * `%USERPROFILE%\.domaininator.toml` on Windows
+ * `/etc/domaininator.toml`
+
+Other names/paths can be specified with the `-config` flag.
+
+### Example config
+
+```
+# $HOME/domaininator/config.toml
+pattern = "[gq][o0]{2}[gq][l1i]e\\.com"
+whitelist = [
+    "google.com"
+]
+ip = true
+workers = 8
+```
+
+Run with:
+
+```
+$ domaininator -config $HOME/domaininator/config.toml
+```
+
+**NOTE:** Config file directives are overridden by command line flags.
+
+## Command line invocation
+
+Except for whitelists, everything supported in config files can be specificed
+with command line flags. E.g. to find domains that could (with some fonts) be visually similar to "google.com":
 
 ```
 $ domaininator "[gq][o0]{2}[gq][l1i]e\.com"
