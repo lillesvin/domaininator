@@ -16,6 +16,14 @@ type Config struct {
 	ShowIPs   bool
 }
 
+func NewWithDefaults() *Config {
+	return &Config{
+		Workers: 16,
+		Verbose: false,
+		ShowIPs: false,
+	}
+}
+
 func FindConfig() (string, error) {
 	configDir, _ := os.UserConfigDir()
 	homeDir, _ := os.UserHomeDir()
@@ -38,11 +46,7 @@ func FindConfig() (string, error) {
 }
 
 func NewFromTOML(file string) (*Config, error) {
-	cfg := &Config{
-		Workers: 16,
-		Verbose: false,
-		ShowIPs: false,
-	}
+	cfg := NewWithDefaults()
 	if _, err := toml.DecodeFile(file, cfg); err != nil {
 		return nil, err
 	}

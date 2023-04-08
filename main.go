@@ -35,7 +35,7 @@ func init() {
 	flag.Parse()
 }
 
-func flagSet(name string) bool {
+func isFlagSet(name string) bool {
 	found := false
 	flag.Visit(func(f *flag.Flag) {
 		if f.Name == name {
@@ -46,11 +46,13 @@ func flagSet(name string) bool {
 }
 
 func main() {
+	// Print version info and exit
 	if version {
 		fmt.Printf("%s %s\n", AppName, AppVersion)
 		os.Exit(0)
 	}
 
+	// Config supplied? Otherwise try to find a default
 	if cfgFile == "" {
 		cfgFile, _ = FindConfig()
 	}
@@ -62,19 +64,20 @@ func main() {
 		os.Exit(2)
 	}
 
+	// No pattern in args and config?
 	if flag.NArg() != 1 && cfg.Pattern == "" {
 		flag.Usage()
 		os.Exit(1)
 	}
 
 	// Let flags override config settings
-	if flagSet("ip") {
+	if isFlagSet("ip") {
 		cfg.ShowIPs = flagShowIPs
 	}
-	if flagSet("verbose") {
+	if isFlagSet("verbose") {
 		cfg.Verbose = flagVerbose
 	}
-	if flagSet("workers") {
+	if isFlagSet("workers") {
 		cfg.Workers = flagWorkers
 	}
 
@@ -84,13 +87,17 @@ func main() {
 		count     int
 	)
 
+	// All the channels
 	workerKill := make(chan bool)
 	queueKill := make(chan bool)
-	lookupChan := make(chan string)
+	lookupChan := make(chan string, 16)
 	responseChan := make(chan string)
 
+	// Set up interrups handling
 	interruptHandler(workerKill, queueKill, cfg.Workers)
 
+	// Find the pattern, we're working with
+	// Prefer command line pattern
 	args := flag.Args()
 	var pattern string
 	if len(args) > 0 {
@@ -100,6 +107,9 @@ func main() {
 	}
 
 	fmt.Printf("Pattern: %s\n", pattern)
+	fmt.Printf("Config: %s\n", cfgFile)
+
+	// Setup genex
 	charset, _ := syntax.Parse(`[a-z0-9]`, syntax.Perl)
 	input, err := syntax.Parse(pattern, syntax.Perl)
 	if err != nil {
@@ -108,20 +118,25 @@ func main() {
 	}
 	count = int(genex.Count(input, charset, 3))
 
-	bar := pb.StartNew(count)
+	// Progress bar
+	bar := pb.New(count)
 	bar.Output = os.Stderr
+	bar.Start()
 
+	// Handle output
 	go func() {
 		for res := range responseChan {
 			outBuffer = append(outBuffer, res)
 		}
 	}()
 
+	// Start workers
 	for i := 0; i < cfg.Workers; i++ {
 		go worker(&waitGroup, lookupChan, responseChan, workerKill, bar, cfg)
 		waitGroup.Add(1)
 	}
 
+	// Generate domain names
 	var domains []string
 	genex.Generate(input, charset, 3, func(domain string) {
 		domains = append(domains, domain)
