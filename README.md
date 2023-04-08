@@ -50,7 +50,7 @@ pattern = "[gq][o0]{2}[gq][l1i]e\\.com"
 whitelist = [
     "google.com"
 ]
-ip = true
+showips = true
 workers = 8
 ```
 

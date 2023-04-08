@@ -9,11 +9,11 @@ import (
 )
 
 type Config struct {
-	Pattern   string
-	Whitelist []string
-	Workers   int
-	Verbose   bool
-	ShowIPs   bool
+	Pattern   string   `toml:"pattern"`
+	Whitelist []string `toml:"whitelist"`
+	Workers   int      `toml:"workers"`
+	Verbose   bool     `toml:"verbose"`
+	ShowIPs   bool     `toml:"showips"`
 }
 
 func NewWithDefaults() *Config {
