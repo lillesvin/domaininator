@@ -165,10 +165,6 @@ func worker(wg *sync.WaitGroup, lookups chan string, responses chan string, work
 	defer wg.Done()
 
 	for d := range lookups {
-		if cfg.InWhitelist(d) {
-			continue
-		}
-
 		select {
 		case <-workerKill:
 			fmt.Println("Stopping worker")
