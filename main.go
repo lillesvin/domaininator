@@ -27,6 +27,12 @@ var (
 )
 
 func init() {
+	flag.Usage = func() {
+		fmt.Printf("Usage: %s [options] [pattern]\n\n", os.Args[0])
+
+		flag.PrintDefaults()
+	}
+
 	flag.StringVar(&cfgFile, "config", "", "Config file to use")
 	flag.BoolVar(&flagShowIPs, "ip", false, "Show IPs on resolving domains")
 	flag.BoolVar(&flagVerbose, "verbose", false, "Show all domain names, even if they are not registered")
