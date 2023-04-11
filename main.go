@@ -19,8 +19,7 @@ var (
 	AppName     string = "Domaininator"
 	AppVersion  string = "0.1.0"
 	version     bool
-	cfg         *Config
-	cfgFile     string
+	flagCfg     string
 	flagShowIPs bool
 	flagVerbose bool
 	flagWorkers int
@@ -33,7 +32,7 @@ func init() {
 		flag.PrintDefaults()
 	}
 
-	flag.StringVar(&cfgFile, "config", "", "Config file to use")
+	flag.StringVar(&flagCfg, "config", "", "Config file to use")
 	flag.BoolVar(&flagShowIPs, "ip", false, "Show IPs on resolving domains")
 	flag.BoolVar(&flagVerbose, "verbose", false, "Show all domain names, even if they are not registered")
 	flag.BoolVar(&version, "version", false, "Show version info and exit")
@@ -58,14 +57,17 @@ func main() {
 		os.Exit(0)
 	}
 
-	// Config supplied? Otherwise try to find a default
-	if cfgFile == "" {
-		cfgFile, _ = FindConfig()
+	// Find a config file in the default places?
+	cfgFile, _ := FindConfig()
+
+	// Use config passed on command line over default configs
+	if isFlagSet("config") {
+		cfgFile = flagCfg
 	}
 
-	// Load config from file
+	// Load config from file, fall back on defaults
 	cfg, err := NewFromTOML(cfgFile)
-	if err != nil {
+	if err != nil && cfgFile != "" {
 		fmt.Printf("Error loading config: %s\n", err)
 		os.Exit(2)
 	}
@@ -113,7 +115,9 @@ func main() {
 	}
 
 	fmt.Printf("Pattern: %s\n", pattern)
-	fmt.Printf("Config: %s\n", cfgFile)
+	if cfgFile != "" {
+		fmt.Printf("Config: %s\n", cfgFile)
+	}
 
 	// Setup genex
 	charset, _ := syntax.Parse(`[a-z0-9]`, syntax.Perl)
