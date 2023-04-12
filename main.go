@@ -17,7 +17,7 @@ import (
 
 var (
 	AppName     string = "Domaininator"
-	AppVersion  string = "0.1.0"
+	AppVersion  string = "0.1.3"
 	version     bool
 	flagCfg     string
 	flagShowIPs bool
