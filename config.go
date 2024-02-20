@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/BurntSushi/toml"
 )
@@ -14,6 +15,7 @@ type Config struct {
 	Workers   int      `toml:"workers"`
 	Verbose   bool     `toml:"verbose"`
 	ShowIPs   bool     `toml:"showips"`
+	Lookups   []string `toml:"lookups"`
 }
 
 func NewWithDefaults() *Config {
@@ -56,6 +58,19 @@ func NewFromTOML(file string) (*Config, error) {
 func (c *Config) InWhitelist(domain string) bool {
 	for _, d := range c.Whitelist {
 		if domain == d {
+			return true
+		}
+	}
+	return false
+}
+
+func (c *Config) InLookups(lookupType string) bool {
+	for _, l := range c.Lookups {
+		if strings.ToLower(l) == "all" {
+			return true
+		}
+
+		if strings.ToLower(lookupType) == strings.ToLower(l) {
 			return true
 		}
 	}

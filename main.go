@@ -17,9 +17,10 @@ import (
 
 var (
 	AppName     string = "Domaininator"
-	AppVersion  string = "0.1.3"
+	AppVersion  string = "0.2.0"
 	version     bool
 	flagCfg     string
+	flagLookups string
 	flagShowIPs bool
 	flagVerbose bool
 	flagWorkers int
@@ -33,6 +34,7 @@ func init() {
 	}
 
 	flag.StringVar(&flagCfg, "config", "", "Config file to use")
+	flag.StringVar(&flagLookups, "lookups", "all", "Comma-separated list of lookups to do (NS, A, CNAME, MX or ALL")
 	flag.BoolVar(&flagShowIPs, "ip", false, "Show IPs on resolving domains")
 	flag.BoolVar(&flagVerbose, "verbose", false, "Show all domain names, even if they are not registered")
 	flag.BoolVar(&version, "version", false, "Show version info and exit")
@@ -87,6 +89,9 @@ func main() {
 	}
 	if isFlagSet("workers") {
 		cfg.Workers = flagWorkers
+	}
+	if isFlagSet("lookups") {
+		cfg.Lookups = strings.Split(flagLookups, ",")
 	}
 
 	var (
@@ -212,28 +217,34 @@ func interruptHandler(workerKill, queueKill chan bool, workers int) {
 func DNSLookup(domain string, cfg *Config) []string {
 	var ret []string
 
+	if cfg.InLookups("NS") {
+		DoLookupNS(&ret, domain, cfg)
+	}
+	if cfg.InLookups("A") {
+		DoLookupHost(&ret, domain, cfg)
+	}
+	if cfg.InLookups("CNAME") {
+		DoLookupCNAME(&ret, domain, cfg)
+	}
+	if cfg.InLookups("MX") {
+		DoLookupMX(&ret, domain, cfg)
+	}
+
+	return ret
+}
+
+func DoLookupHost(ret *[]string, domain string, cfg *Config) {
 	ips, _ := net.LookupHost(domain)
 	if len(ips) > 0 {
 		if cfg.ShowIPs {
-			ret = append(ret, fmt.Sprintf("A: %s", strings.Join(ips, ", ")))
+			*ret = append(*ret, fmt.Sprintf("A: %s", strings.Join(ips, ", ")))
 		} else {
-			ret = append(ret, "A")
+			*ret = append(*ret, "A")
 		}
 	}
+}
 
-	mxs, _ := net.LookupMX(domain)
-	if len(mxs) > 0 {
-		if cfg.ShowIPs {
-			var out []string
-			for _, mx := range mxs {
-				out = append(out, mx.Host)
-			}
-			ret = append(ret, fmt.Sprintf("MX: %s", strings.Join(out, ", ")))
-		} else {
-			ret = append(ret, "MX")
-		}
-	}
-
+func DoLookupNS(ret *[]string, domain string, cfg *Config) {
 	nss, _ := net.LookupNS(domain)
 	if len(nss) > 0 {
 		if cfg.ShowIPs {
@@ -241,11 +252,35 @@ func DNSLookup(domain string, cfg *Config) []string {
 			for _, ns := range nss {
 				out = append(out, ns.Host)
 			}
-			ret = append(ret, fmt.Sprintf("NS: %s", strings.Join(out, ", ")))
+			*ret = append(*ret, fmt.Sprintf("NS: %s", strings.Join(out, ", ")))
 		} else {
-			ret = append(ret, "NS")
+			*ret = append(*ret, "NS")
 		}
 	}
+}
 
-	return ret
+func DoLookupCNAME(ret *[]string, domain string, cfg *Config) {
+	cname, _ := net.LookupCNAME(domain)
+	if cname != "" {
+		if cfg.ShowIPs {
+			*ret = append(*ret, fmt.Sprintf("CNAME: %s", cname))
+		} else {
+			*ret = append(*ret, "CNAME")
+		}
+	}
+}
+
+func DoLookupMX(ret *[]string, domain string, cfg *Config) {
+	mxs, _ := net.LookupMX(domain)
+	if len(mxs) > 0 {
+		if cfg.ShowIPs {
+			var out []string
+			for _, mx := range mxs {
+				out = append(out, mx.Host)
+			}
+			*ret = append(*ret, fmt.Sprintf("MX: %s", strings.Join(out, ", ")))
+		} else {
+			*ret = append(*ret, "MX")
+		}
+	}
 }
