@@ -65,6 +65,11 @@ func (c *Config) InWhitelist(domain string) bool {
 }
 
 func (c *Config) InLookups(lookupType string) bool {
+	// Default to all if no lookups are specified
+	if len(c.Lookups) == 0 {
+		return true
+	}
+
 	for _, l := range c.Lookups {
 		if strings.ToLower(l) == "all" {
 			return true
