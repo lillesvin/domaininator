@@ -1,6 +1,6 @@
 BUILD_PATH = build
 BINARY_BASENAME = domaininator
-VERSION = 0.2.0
+VERSION = 0.2.1
 
 all: linux windows darwin
 

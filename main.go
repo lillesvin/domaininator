@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/signal"
 	"regexp/syntax"
+	"sort"
 	"strings"
 	"sync"
 	"syscall"
@@ -17,7 +18,7 @@ import (
 
 var (
 	AppName     string = "Domaininator"
-	AppVersion  string = "0.2.0"
+	AppVersion  string = "0.2.1"
 	version     bool
 	flagCfg     string
 	flagLookups string
@@ -34,7 +35,7 @@ func init() {
 	}
 
 	flag.StringVar(&flagCfg, "config", "", "Config file to use")
-	flag.StringVar(&flagLookups, "lookups", "all", "Comma-separated list of lookups to do (NS, A, CNAME, MX or ALL")
+	flag.StringVar(&flagLookups, "lookups", "ALL", "Comma-separated list of lookups to do (NS, A, CNAME, MX or ALL)")
 	flag.BoolVar(&flagShowIPs, "ip", false, "Show IPs on resolving domains")
 	flag.BoolVar(&flagVerbose, "verbose", false, "Show all domain names, even if they are not registered")
 	flag.BoolVar(&version, "version", false, "Show version info and exit")
@@ -252,6 +253,7 @@ func DoLookupNS(ret *[]string, domain string, cfg *Config) {
 			for _, ns := range nss {
 				out = append(out, ns.Host)
 			}
+			sort.Strings(out)
 			*ret = append(*ret, fmt.Sprintf("NS: %s", strings.Join(out, ", ")))
 		} else {
 			*ret = append(*ret, "NS")
@@ -278,6 +280,7 @@ func DoLookupMX(ret *[]string, domain string, cfg *Config) {
 			for _, mx := range mxs {
 				out = append(out, mx.Host)
 			}
+			sort.Strings(out)
 			*ret = append(*ret, fmt.Sprintf("MX: %s", strings.Join(out, ", ")))
 		} else {
 			*ret = append(*ret, "MX")
